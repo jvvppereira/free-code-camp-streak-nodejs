@@ -6,14 +6,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/streak', async (req, res) => {
-  const { username, width, height } = req.query;
+  const { username, width, height, timezone } = req.query;
 
   if (!username) {
     return res.status(400).type('text/plain').send('Missing "username" query parameter');
   }
 
   try {
-    const data = await getStreakData(username);
+    const data = await getStreakData(username, timezone);
     const svg = generateBadgeSvg(data, { width, height });
 
     res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');

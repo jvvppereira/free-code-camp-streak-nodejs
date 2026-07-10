@@ -24,32 +24,61 @@ async function fetchUserData(userName) {
   return user;
 }
 
-function getStreakChallenges(challenges) {
-  if (!challenges || challenges.length === 0) return [];
+function getDateString(timestampMs, timezone = 'UTC') {
+  const date = new Date(timestampMs);
+  const offsetNum = parseFloat(timezone);
+  if (!isNaN(offsetNum)) {
+    const offsetDate = new Date(timestampMs + offsetNum * 60 * 60 * 1000);
+    return offsetDate.toISOString().slice(0, 10);
+  }
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    // YYYY-MM-DD (ISO 8601)
+    return formatter.format(date);
+  } catch (e) {
+    return date.toISOString().slice(0, 10);
+  }
+}
 
-  const sorted = [...challenges].sort((a, b) => a.completedDate - b.completedDate);
+function getStreak(timestamps, timezone = 'UTC') {
+  if (!timestamps || timestamps.length === 0) return 0;
+
+  const sorted = [...timestamps].sort((a, b) => a - b);
 
   let lastStreakDate = null;
-  const streak = [];
+  let streakCount = 0;
 
-  for (const challenge of sorted.reverse()) {
-    const challengeDate = new Date(challenge.completedDate);
-    const dateStr = challengeDate.toISOString().slice(0, 10);
+  const reversed = [...sorted].reverse();
+  for (const ts of reversed) {
+    const dateStr = getDateString(ts, timezone);
 
     if (lastStreakDate === null) {
-      streak.push(challenge);
+      const todayStr = getDateString(Date.now(), timezone);
+      const yesterdayDate = new Date();
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterdayStr = getDateString(yesterdayDate.getTime(), timezone);
+
+      if (dateStr !== todayStr && dateStr !== yesterdayStr) {
+        break;
+      }
+
+      streakCount = 1;
       lastStreakDate = dateStr;
     } else {
       if (dateStr === lastStreakDate) {
         continue;
       }
 
-      const prevDate = new Date(lastStreakDate);
-      prevDate.setDate(prevDate.getDate() - 1);
-      const prevDateStr = prevDate.toISOString().slice(0, 10);
+      const [y, m, d] = lastStreakDate.split('-').map(Number);
+      const prevDateStr = new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
 
       if (dateStr === prevDateStr) {
-        streak.push(challenge);
+        streakCount++;
         lastStreakDate = dateStr;
       } else {
         break;
@@ -57,49 +86,54 @@ function getStreakChallenges(challenges) {
     }
   }
 
-  if (streak.length === 1) {
-    const uniqueDate = new Date(streak[0].completedDate).toISOString().slice(0, 10);
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-
-    if (uniqueDate !== today && uniqueDate !== yesterday) {
-      streak.shift();
-    }
-  }
-
-  return streak.reverse();
+  return streakCount;
 }
 
-function getLastWeekStatus(challenges) {
-  const today = new Date();
+function getLastWeekStatus(timestamps, timezone = 'UTC') {
   const days = [];
+  const now = Date.now();
 
   for (let i = 6; i >= 0; i--) {
-    const date = new Date(today);
+    const date = new Date(now);
     date.setDate(date.getDate() - i);
     days.push(date);
   }
 
-  return days.map(date => {
-    const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'short' });
-    const dateStr = date.toISOString().slice(0, 10);
+  const activityDates = new Set(
+    (timestamps || []).map(ts => getDateString(ts, timezone))
+  );
 
-    const haveDone = (challenges || []).some(challenge => {
-      const challengeDate = new Date(challenge.completedDate).toISOString().slice(0, 10);
-      return challengeDate === dateStr;
+  return days.map(date => {
+    let adjustedDate = date;
+    const offsetNum = parseFloat(timezone);
+    if (!isNaN(offsetNum)) {
+      adjustedDate = new Date(date.getTime() + offsetNum * 60 * 60 * 1000);
+    }
+    const tzString = !isNaN(offsetNum) ? 'UTC' : timezone;
+    const formattedDayOfWeek = adjustedDate.toLocaleDateString('en-US', {
+      timeZone: tzString,
+      weekday: 'short'
     });
 
-    return { dayOfWeek, haveDone };
+    const dateStr = getDateString(date.getTime(), timezone);
+    const haveDone = activityDates.has(dateStr);
+
+    return { dayOfWeek: formattedDayOfWeek, haveDone };
   });
 }
 
-async function getStreakData(userName) {
+async function getStreakData(userName, timezone = 'UTC') {
   const user = await fetchUserData(userName);
-  const challenges = user.completedChallenges || [];
 
-  const streakChallenges = getStreakChallenges(challenges);
-  const streakCount = streakChallenges.length;
-  const last7Days = getLastWeekStatus(challenges);
+  let activityTimestamps = [];
+  if (user.calendar && Object.keys(user.calendar).length > 0) {
+    activityTimestamps = Object.keys(user.calendar).map(tsStr => Number(tsStr) * 1000);
+  } else if (user.completedChallenges && user.completedChallenges.length > 0) {
+    activityTimestamps = user.completedChallenges.map(c => c.completedDate);
+  }
+
+  const streakCount = getStreak(activityTimestamps, timezone);
+  const last7Days = getLastWeekStatus(activityTimestamps, timezone);
   const statusMsg = last7Days[last7Days.length - 1]?.haveDone
     ? 'Well done! Keep learning'
     : 'Daily task pending!';

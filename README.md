@@ -81,15 +81,16 @@ Try: http://localhost:3000/streak?username=QuincyLarson
   - `username` (required): Your public freeCodeCamp username.
   - `width` (optional): The custom width for the SVG badge (default: `540`).
   - `height` (optional): The custom height for the SVG badge (default: `190`).
+  - `timezone` (optional): Timezone name (e.g. `America/Sao_Paulo`, `UTC`) or numeric UTC offset (e.g. `-3`, `+5.5`) for streak calculation (default: `UTC`).
 
 #### Request Example:
 ```http
 GET http://localhost:3000/streak?username=QuincyLarson
 ```
 
-Request with custom dimensions:
+Request with custom dimensions and timezone:
 ```http
-GET http://localhost:3000/streak?username=QuincyLarson&width=600&height=220
+GET http://localhost:3000/streak?username=jvvppereira&width=600&height=220&timezone=America/Sao_Paulo
 ```
 
 #### How to embed in your GitHub README:
