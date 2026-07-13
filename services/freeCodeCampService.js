@@ -62,7 +62,7 @@ function getStreak(timestamps, timezone = 'UTC') {
 
     if (lastStreakDate === null) {
       const todayStr = getDateString(Date.now(), timezone);
-      const yesterdayDate = new Date();
+      const yesterdayDate = new Date(Date.now());
       yesterdayDate.setDate(yesterdayDate.getDate() - 1);
       const yesterdayStr = getDateString(yesterdayDate.getTime(), timezone);
 
