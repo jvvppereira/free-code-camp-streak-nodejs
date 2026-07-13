@@ -32,14 +32,17 @@ function getDateString(timestampMs, timezone = 'UTC') {
     return offsetDate.toISOString().slice(0, 10);
   }
   try {
-    const formatter = new Intl.DateTimeFormat('en-CA', {
+    const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
     });
-    // YYYY-MM-DD (ISO 8601)
-    return formatter.format(date);
+    const parts = formatter.formatToParts(date);
+    const year = parts.find(p => p.type === 'year').value;
+    const month = parts.find(p => p.type === 'month').value;
+    const day = parts.find(p => p.type === 'day').value;
+    return `${year}-${month}-${day}`;
   } catch (e) {
     return date.toISOString().slice(0, 10);
   }
