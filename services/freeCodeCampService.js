@@ -1,4 +1,5 @@
 const FCC_API_URL = 'https://api.freecodecamp.org/users/get-public-profile';
+const { getStatusMessage, DEFAULT_LOCALE } = require('./i18nService');
 
 async function fetchUserData(userName) {
   const url = `${FCC_API_URL}?username=${encodeURIComponent(userName)}`;
@@ -32,7 +33,7 @@ function getDateString(timestampMs, timezone = 'UTC') {
     return offsetDate.toISOString().slice(0, 10);
   }
   try {
-    const formatter = new Intl.DateTimeFormat('en-US', {
+    const formatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
       timeZone: timezone,
       year: 'numeric',
       month: '2-digit',
@@ -92,7 +93,7 @@ function getStreak(timestamps, timezone = 'UTC') {
   return streakCount;
 }
 
-function getLastWeekStatus(timestamps, timezone = 'UTC') {
+function getLastWeekStatus(timestamps, timezone = 'UTC', lang = DEFAULT_LOCALE) {
   const days = [];
   const now = Date.now();
 
@@ -113,7 +114,7 @@ function getLastWeekStatus(timestamps, timezone = 'UTC') {
       adjustedDate = new Date(date.getTime() + offsetNum * 60 * 60 * 1000);
     }
     const tzString = !isNaN(offsetNum) ? 'UTC' : timezone;
-    const formattedDayOfWeek = adjustedDate.toLocaleDateString('en-US', {
+    const formattedDayOfWeek = adjustedDate.toLocaleDateString(lang, {
       timeZone: tzString,
       weekday: 'short'
     });
@@ -125,7 +126,7 @@ function getLastWeekStatus(timestamps, timezone = 'UTC') {
   });
 }
 
-async function getStreakData(userName, timezone = 'UTC') {
+async function getStreakData(userName, timezone = 'UTC', lang = DEFAULT_LOCALE) {
   const user = await fetchUserData(userName);
 
   let activityTimestamps = [];
@@ -136,10 +137,8 @@ async function getStreakData(userName, timezone = 'UTC') {
   }
 
   const streakCount = getStreak(activityTimestamps, timezone);
-  const last7Days = getLastWeekStatus(activityTimestamps, timezone);
-  const statusMsg = last7Days[last7Days.length - 1]?.haveDone
-    ? 'Well done! Keep learning'
-    : 'Daily task pending!';
+  const last7Days = getLastWeekStatus(activityTimestamps, timezone, lang);
+  const statusMsg = getStatusMessage(last7Days[last7Days.length - 1]?.haveDone, lang);
 
   return { count: streakCount, last7Days, status: statusMsg };
 }

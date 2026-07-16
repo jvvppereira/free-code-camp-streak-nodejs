@@ -7,8 +7,7 @@ describe('freeCodeCampService - getStreakData', () => {
     t.mock.restoreAll();
   });
 
-  test('should calculate streak and weekly status correctly using calendar data', async (t) => {
-    // Mock the global fetch
+  test('should calculate streak and weekly status correctly using calendar data (en-US)', async (t) => {
     t.mock.method(globalThis, 'fetch', async (url) => {
       assert.ok(url.includes('username=testuser'));
       
@@ -17,8 +16,6 @@ describe('freeCodeCampService - getStreakData', () => {
           user: {
             testuser: {
               calendar: {
-                // Let's create an active streak of 3 days (today, yesterday, day before)
-                // Use timestamps in seconds
                 [Math.floor(Date.now() / 1000)]: 1,
                 [Math.floor((Date.now() - 86400000) / 1000)]: 1,
                 [Math.floor((Date.now() - 2 * 86400000) / 1000)]: 1
@@ -35,15 +32,49 @@ describe('freeCodeCampService - getStreakData', () => {
       };
     });
 
-    const data = await getStreakData('testuser', 'UTC');
+    const data = await getStreakData('testuser', 'UTC', 'en-US');
     
     assert.strictEqual(data.count, 3);
     assert.strictEqual(data.last7Days.length, 7);
-    // Today and yesterday should be done
     assert.strictEqual(data.last7Days[6].haveDone, true);
     assert.strictEqual(data.last7Days[5].haveDone, true);
     assert.strictEqual(data.last7Days[4].haveDone, true);
     assert.strictEqual(data.status, 'Well done! Keep learning');
+  });
+
+  test('should calculate streak and weekly status correctly using calendar data (pt-BR)', async (t) => {
+    t.mock.method(globalThis, 'fetch', async (url) => {
+      assert.ok(url.includes('username=testuser'));
+      
+      const mockApiResponse = {
+        entities: {
+          user: {
+            testuser: {
+              calendar: {
+                [Math.floor(Date.now() / 1000)]: 1,
+                [Math.floor((Date.now() - 86400000) / 1000)]: 1,
+                [Math.floor((Date.now() - 2 * 86400000) / 1000)]: 1
+              },
+              completedChallenges: []
+            }
+          }
+        }
+      };
+
+      return {
+        ok: true,
+        json: async () => mockApiResponse
+      };
+    });
+
+    const data = await getStreakData('testuser', 'UTC', 'pt-BR');
+    
+    assert.strictEqual(data.count, 3);
+    assert.strictEqual(data.last7Days.length, 7);
+    assert.strictEqual(data.last7Days[6].haveDone, true);
+    assert.strictEqual(data.last7Days[5].haveDone, true);
+    assert.strictEqual(data.last7Days[4].haveDone, true);
+    assert.strictEqual(data.status, 'Muito bem! Continue aprendendo');
   });
 
   test('should fallback to completedChallenges when calendar is missing or empty', async (t) => {
@@ -68,7 +99,7 @@ describe('freeCodeCampService - getStreakData', () => {
       };
     });
 
-    const data = await getStreakData('testuser', 'UTC');
+    const data = await getStreakData('testuser', 'UTC', 'en-US');
     
     assert.strictEqual(data.count, 2);
     assert.strictEqual(data.last7Days[6].haveDone, true);
@@ -82,9 +113,6 @@ describe('freeCodeCampService - getStreakData', () => {
           user: {
             testuser: {
               calendar: {
-                // 1780027200 = 2026-05-27 12:00:00 UTC
-                // 1780113600 = 2026-05-28 12:00:00 UTC
-                // 1780200000 = 2026-05-29 12:00:00 UTC
                 [1780027200]: 1,
                 [1780113600]: 1,
                 [1780200000]: 1
@@ -101,10 +129,9 @@ describe('freeCodeCampService - getStreakData', () => {
       };
     });
 
-    // Mock Date.now to return 2026-05-30 12:00:00 UTC -> 1780286400000
     t.mock.method(Date, 'now', () => 1780286400000);
 
-    const dataUTC = await getStreakData('testuser', 'UTC');
+    const dataUTC = await getStreakData('testuser', 'UTC', 'en-US');
     assert.strictEqual(dataUTC.count, 3);
   });
 

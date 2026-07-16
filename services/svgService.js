@@ -7,6 +7,8 @@ const MISSED_COLOR = '#4b5563';
 const LABEL_COLOR = '#9ca3af';
 const FONT_FAMILY = 'system-ui, -apple-system, sans-serif';
 
+const { getStreakMessage, getStatusMessage, DEFAULT_LOCALE: DEFAULT_LANG } = require('./i18nService');
+
 function escapeXml(text) {
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
@@ -47,6 +49,8 @@ function generateBadgeSvg(data, options = {}) {
     }
   }
 
+  const lang = options.lang || DEFAULT_LANG;
+
   const spacing = (width - 80) / (totalDays - 1);
   const startX = (width - (spacing * (totalDays - 1))) / 2;
 
@@ -59,6 +63,8 @@ function generateBadgeSvg(data, options = {}) {
     const x = startX + i * spacing;
     return generateDayIcon(x, 140, day.haveDone);
   }).join('\n');
+
+  const statusColor = status === getStatusMessage(true, lang) ? DONE_COLOR : '#fbbf24';
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
@@ -75,10 +81,10 @@ function generateBadgeSvg(data, options = {}) {
   <rect width="${width}" height="${height}" rx="14" fill="url(#bg)" stroke="#2d2e4a" stroke-width="1"/>
 
   <text x="${width / 2}" y="42" fill="${TEXT_COLOR}" font-family="${FONT_FAMILY}" font-size="24" text-anchor="middle" font-weight="bold">
-    <tspan fill="url(#fire)">🔥</tspan> ${count}-day streak!
+    <tspan fill="url(#fire)">🔥</tspan> ${escapeXml(getStreakMessage(count, lang))}
   </text>
 
-  <text x="${width / 2}" y="70" fill="${escapeXml(status) === 'Well done! Keep learning' ? DONE_COLOR : '#fbbf24'}" font-family="${FONT_FAMILY}" font-size="14" text-anchor="middle">${escapeXml(status)}</text>
+  <text x="${width / 2}" y="70" fill="${statusColor}" font-family="${FONT_FAMILY}" font-size="14" text-anchor="middle">${escapeXml(status)}</text>
 
   <line x1="40" y1="88" x2="${width - 40}" y2="88" stroke="#2d2e4a" stroke-width="1"/>
 

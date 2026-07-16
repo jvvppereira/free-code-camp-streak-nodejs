@@ -1,0 +1,7 @@
+{
+  "status": {
+    "done": "Muito bem! Continue aprendendo",
+    "pending": "Tarefa diária pendente!"
+  },
+  "streak": "{count} dias de sequência!"
+}

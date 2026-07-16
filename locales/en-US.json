@@ -1,0 +1,7 @@
+{
+  "status": {
+    "done": "Well done! Keep learning",
+    "pending": "Daily task pending!"
+  },
+  "streak": "{count}-day streak!"
+}

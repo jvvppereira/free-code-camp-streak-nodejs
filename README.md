@@ -82,6 +82,7 @@ Try: http://localhost:3000/streak?username=QuincyLarson
   - `width` (optional): The custom width for the SVG badge (default: `540`).
   - `height` (optional): The custom height for the SVG badge (default: `190`).
   - `timezone` (optional): Timezone name (e.g. `America/Sao_Paulo`, `UTC`) or numeric UTC offset (e.g. `-3`, `+5.5`) for streak calculation (default: `UTC`).
+  - `lang` (optional): Language for text display (e.g. `en-US`, `pt-BR`) (default: `en-US`).
 
 #### Request Example:
 ```http
@@ -91,6 +92,11 @@ GET http://localhost:3000/streak?username=QuincyLarson
 Request with custom dimensions and timezone:
 ```http
 GET http://localhost:3000/streak?username=jvvppereira&width=600&height=220&timezone=America/Sao_Paulo
+```
+
+Request with Portuguese (Brazil) language:
+```http
+GET http://localhost:3000/streak?username=jvvppereira&lang=pt-BR
 ```
 
 #### How to embed in your GitHub README:
