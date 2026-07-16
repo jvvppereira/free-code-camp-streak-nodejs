@@ -32,21 +32,10 @@ function getDateString(timestampMs, timezone = 'UTC') {
     const offsetDate = new Date(timestampMs + offsetNum * 60 * 60 * 1000);
     return offsetDate.toISOString().slice(0, 10);
   }
-  try {
-    const formatter = new Intl.DateTimeFormat(DEFAULT_LOCALE, {
-      timeZone: timezone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    const parts = formatter.formatToParts(date);
-    const year = parts.find(p => p.type === 'year').value;
-    const month = parts.find(p => p.type === 'month').value;
-    const day = parts.find(p => p.type === 'day').value;
-    return `${year}-${month}-${day}`;
-  } catch (e) {
-    return date.toISOString().slice(0, 10);
-  }
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function getStreak(timestamps, timezone = 'UTC') {
