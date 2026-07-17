@@ -27,11 +27,6 @@ async function fetchUserData(userName) {
 
 function getDateString(timestampMs, timezone = 'UTC') {
   const date = new Date(timestampMs);
-  const offsetNum = parseFloat(timezone);
-  if (!isNaN(offsetNum)) {
-    const offsetDate = new Date(timestampMs + offsetNum * 60 * 60 * 1000);
-    return offsetDate.toISOString().slice(0, 10);
-  }
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const day = String(date.getUTCDate()).padStart(2, '0');
@@ -98,11 +93,7 @@ function getLastWeekStatus(timestamps, timezone = 'UTC', lang = DEFAULT_LOCALE) 
 
   return days.map(date => {
     let adjustedDate = date;
-    const offsetNum = parseFloat(timezone);
-    if (!isNaN(offsetNum)) {
-      adjustedDate = new Date(date.getTime() + offsetNum * 60 * 60 * 1000);
-    }
-    const tzString = !isNaN(offsetNum) ? 'UTC' : timezone;
+    const tzString = timezone;
     const formattedDayOfWeek = adjustedDate.toLocaleDateString(lang, {
       timeZone: tzString,
       weekday: 'short'
