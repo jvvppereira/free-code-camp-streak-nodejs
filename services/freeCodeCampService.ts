@@ -1,13 +1,31 @@
-const FCC_API_URL = 'https://api.freecodecamp.org/users/get-public-profile';
-const { getStatusMessage, DEFAULT_LOCALE } = require('./i18nService');
+import { getStatusMessage, DEFAULT_LOCALE } from './i18nService.js';
 
-async function fetchUserData(userName) {
+const FCC_API_URL = 'https://api.freecodecamp.org/users/get-public-profile';
+
+interface FCCUser {
+  calendar?: Record<string, number>;
+  completedChallenges?: Array<{ completedDate: number }>;
+}
+
+interface FCCApiResponse {
+  entities?: {
+    user?: Record<string, FCCUser>;
+  };
+}
+
+export interface StreakData {
+  count: number;
+  last7Days: Array<{ dayOfWeek: string; haveDone: boolean }>;
+  status: string;
+}
+
+async function fetchUserData(userName: string): Promise<FCCUser> {
   const url = `${FCC_API_URL}?username=${encodeURIComponent(userName)}`;
   const response = await fetch(url, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; FCCStreakBot/1.0)',
-      'Accept': 'application/json'
-    }
+      Accept: 'application/json',
+    },
   });
 
   if (!response.ok) {
@@ -15,7 +33,7 @@ async function fetchUserData(userName) {
     throw new Error(`API returned status ${response.status}: ${text}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as FCCApiResponse;
   const user = data?.entities?.user?.[userName];
 
   if (!user) {
@@ -25,7 +43,7 @@ async function fetchUserData(userName) {
   return user;
 }
 
-function getDateString(timestampMs, timezone = 'UTC') {
+function getDateString(timestampMs: number, timezone: string = 'UTC'): string {
   const date = new Date(timestampMs);
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -33,12 +51,12 @@ function getDateString(timestampMs, timezone = 'UTC') {
   return `${year}-${month}-${day}`;
 }
 
-function getStreak(timestamps, timezone = 'UTC') {
+function getStreak(timestamps: number[], timezone: string = 'UTC'): number {
   if (!timestamps || timestamps.length === 0) return 0;
 
   const sorted = [...timestamps].sort((a, b) => a - b);
 
-  let lastStreakDate = null;
+  let lastStreakDate: string | null = null;
   let streakCount = 0;
 
   const reversed = [...sorted].reverse();
@@ -62,7 +80,7 @@ function getStreak(timestamps, timezone = 'UTC') {
         continue;
       }
 
-      const [y, m, d] = lastStreakDate.split('-').map(Number);
+      const [y, m, d] = lastStreakDate.split('-').map(Number) as [number, number, number];
       const prevDateStr = new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
 
       if (dateStr === prevDateStr) {
@@ -77,8 +95,12 @@ function getStreak(timestamps, timezone = 'UTC') {
   return streakCount;
 }
 
-function getLastWeekStatus(timestamps, timezone = 'UTC', lang = DEFAULT_LOCALE) {
-  const days = [];
+function getLastWeekStatus(
+  timestamps: number[],
+  timezone: string = 'UTC',
+  lang: string = DEFAULT_LOCALE
+): Array<{ dayOfWeek: string; haveDone: boolean }> {
+  const days: Date[] = [];
   const now = Date.now();
 
   for (let i = 6; i >= 0; i--) {
@@ -88,15 +110,15 @@ function getLastWeekStatus(timestamps, timezone = 'UTC', lang = DEFAULT_LOCALE) 
   }
 
   const activityDates = new Set(
-    (timestamps || []).map(ts => getDateString(ts, timezone))
+    (timestamps || []).map((ts) => getDateString(ts, timezone))
   );
 
-  return days.map(date => {
+  return days.map((date) => {
     let adjustedDate = date;
     const tzString = timezone;
     const formattedDayOfWeek = adjustedDate.toLocaleDateString(lang, {
       timeZone: tzString,
-      weekday: 'short'
+      weekday: 'short',
     });
 
     const dateStr = getDateString(date.getTime(), timezone);
@@ -106,21 +128,23 @@ function getLastWeekStatus(timestamps, timezone = 'UTC', lang = DEFAULT_LOCALE) 
   });
 }
 
-async function getStreakData(userName, timezone = 'UTC', lang = DEFAULT_LOCALE) {
+export async function getStreakData(
+  userName: string,
+  timezone: string = 'UTC',
+  lang: string = DEFAULT_LOCALE
+): Promise<StreakData> {
   const user = await fetchUserData(userName);
 
-  let activityTimestamps = [];
+  let activityTimestamps: number[] = [];
   if (user.calendar && Object.keys(user.calendar).length > 0) {
-    activityTimestamps = Object.keys(user.calendar).map(tsStr => Number(tsStr) * 1000);
+    activityTimestamps = Object.keys(user.calendar).map((tsStr) => Number(tsStr) * 1000);
   } else if (user.completedChallenges && user.completedChallenges.length > 0) {
-    activityTimestamps = user.completedChallenges.map(c => c.completedDate);
+    activityTimestamps = user.completedChallenges.map((c) => c.completedDate);
   }
 
   const streakCount = getStreak(activityTimestamps, timezone);
   const last7Days = getLastWeekStatus(activityTimestamps, timezone, lang);
-  const statusMsg = getStatusMessage(last7Days[last7Days.length - 1]?.haveDone, lang);
+  const statusMsg = getStatusMessage(last7Days[last7Days.length - 1]?.haveDone ?? false, lang);
 
   return { count: streakCount, last7Days, status: statusMsg };
 }
-
-module.exports = { getStreakData };

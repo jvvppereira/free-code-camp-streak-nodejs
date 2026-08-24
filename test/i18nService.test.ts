@@ -1,60 +1,10 @@
-const { test, describe, beforeEach } = require('node:test');
-const assert = require('node:assert');
-const { 
-  getStatusMessage, 
-  getStreakMessage, 
-  loadLocale, 
-  clearCache, 
-  DEFAULT_LOCALE 
-} = require('../services/i18nService');
+import { test, describe, beforeEach } from 'node:test';
+import assert from 'node:assert';
+import { getStatusMessage, getStreakMessage, clearCache, DEFAULT_LOCALE } from '../services/i18nService.js';
 
 describe('i18nService', () => {
   beforeEach(() => {
     clearCache();
-  });
-
-  describe('loadLocale', () => {
-    test('should load default locale (en-US)', () => {
-      const messages = loadLocale('en-US');
-      
-      assert.ok(messages);
-      assert.strictEqual(messages.status.done, 'Well done! Keep learning');
-      assert.strictEqual(messages.status.pending, 'Daily task pending!');
-      assert.strictEqual(messages.streak, '{count}-day streak!');
-    });
-
-    test('should load pt-BR locale', () => {
-      const messages = loadLocale('pt-BR');
-      
-      assert.ok(messages);
-      assert.strictEqual(messages.status.done, 'Muito bem! Continue aprendendo');
-      assert.strictEqual(messages.status.pending, 'Tarefa diária pendente!');
-      assert.strictEqual(messages.streak, '{count} dias de sequência!');
-    });
-
-    test('should cache loaded locale', () => {
-      const messages1 = loadLocale('en-US');
-      const messages2 = loadLocale('en-US');
-      
-      assert.strictEqual(messages1, messages2);
-    });
-
-    test('should fallback to default locale for unknown locale', () => {
-      const messages = loadLocale('fr-FR');
-      
-      assert.strictEqual(messages.status.done, 'Well done! Keep learning');
-      assert.strictEqual(messages.status.pending, 'Daily task pending!');
-    });
-
-    test('should throw error for unknown default locale', () => {
-      // Temporarily change default locale to non-existent for test
-      // This tests the error path when default locale file is missing
-      const originalDefault = DEFAULT_LOCALE;
-      
-      // We can't easily test this without mocking fs, so we skip the error path
-      // but the function has the throw for completeness
-      assert.ok(typeof DEFAULT_LOCALE === 'string');
-    });
   });
 
   describe('getStatusMessage', () => {
@@ -95,8 +45,8 @@ describe('i18nService', () => {
     });
 
     test('should use cached locale', () => {
-      // Load once to populate cache
-      loadLocale('en-US');
+      // Load once to populate cache via getStatusMessage
+      getStatusMessage(true, 'en-US');
       const message1 = getStatusMessage(true, 'en-US');
       const message2 = getStatusMessage(true, 'en-US');
       
@@ -144,15 +94,15 @@ describe('i18nService', () => {
 
   describe('clearCache', () => {
     test('should clear locale cache', () => {
-      loadLocale('en-US');
-      loadLocale('pt-BR');
+      // Populate cache via getStatusMessage/getStreakMessage
+      getStatusMessage(true, 'en-US');
+      getStreakMessage(5, 'pt-BR');
       
       clearCache();
       
       // After clear, loading should read from file again
-      const messages = loadLocale('en-US');
-      assert.ok(messages);
-      assert.strictEqual(messages.status.done, 'Well done! Keep learning');
+      const message = getStatusMessage(true, 'en-US');
+      assert.strictEqual(message, 'Well done! Keep learning');
     });
   });
 

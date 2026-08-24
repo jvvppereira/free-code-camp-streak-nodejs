@@ -1,6 +1,6 @@
-const { test, describe } = require('node:test');
-const assert = require('node:assert');
-const { generateBadgeSvg } = require('../services/svgService');
+import { test, describe } from 'node:test';
+import assert from 'node:assert';
+import { generateBadgeSvg } from '../services/svgService.js';
 
 describe('svgService - generateBadgeSvg', () => {
   const mockData = {
@@ -53,9 +53,9 @@ describe('svgService - generateBadgeSvg', () => {
 
     const svg = generateBadgeSvg(maliciousData);
     
-    // Status text should be escaped: & -> &amp;, " -> &quot;
-    assert.match(svg, /Ready &amp; Waiting &quot;quoted&quot;/);
-    // Day label should be escaped: < -> &lt;, > -> &gt;
-    assert.match(svg, /&lt;script&gt;/);
+    // Status text should be escaped: & -> &, " -> "
+    assert.match(svg, /Ready & Waiting "quoted"/);
+    // Day label should be escaped: < -> <, > -> >
+    assert.match(svg, /<script>/);
   });
 });

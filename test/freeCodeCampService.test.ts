@@ -1,14 +1,15 @@
-const { test, describe, afterEach } = require('node:test');
-const assert = require('node:assert');
-const { getStreakData } = require('../services/freeCodeCampService');
+import { test, describe, afterEach } from 'node:test';
+import assert from 'node:assert';
+import { getStreakData } from '../services/freeCodeCampService.js';
 
 describe('freeCodeCampService - getStreakData', () => {
   afterEach((t) => {
-    t.mock.restoreAll();
+    (t as any).mock?.restoreAll?.();
   });
 
   test('should calculate streak and weekly status correctly using calendar data (en-US)', async (t) => {
-    t.mock.method(globalThis, 'fetch', async (url) => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async (url: string) => {
       assert.ok(url.includes('username=testuser'));
       
       const mockApiResponse = {
@@ -29,7 +30,7 @@ describe('freeCodeCampService - getStreakData', () => {
       return {
         ok: true,
         json: async () => mockApiResponse
-      };
+      } as unknown as Response;
     });
 
     const data = await getStreakData('testuser', 'UTC', 'en-US');
@@ -43,7 +44,8 @@ describe('freeCodeCampService - getStreakData', () => {
   });
 
   test('should calculate streak and weekly status correctly using calendar data (pt-BR)', async (t) => {
-    t.mock.method(globalThis, 'fetch', async (url) => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async (url: string) => {
       assert.ok(url.includes('username=testuser'));
       
       const mockApiResponse = {
@@ -64,7 +66,7 @@ describe('freeCodeCampService - getStreakData', () => {
       return {
         ok: true,
         json: async () => mockApiResponse
-      };
+      } as unknown as Response;
     });
 
     const data = await getStreakData('testuser', 'UTC', 'pt-BR');
@@ -78,7 +80,8 @@ describe('freeCodeCampService - getStreakData', () => {
   });
 
   test('should fallback to completedChallenges when calendar is missing or empty', async (t) => {
-    t.mock.method(globalThis, 'fetch', async (url) => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async (url: string) => {
       const mockApiResponse = {
         entities: {
           user: {
@@ -96,7 +99,7 @@ describe('freeCodeCampService - getStreakData', () => {
       return {
         ok: true,
         json: async () => mockApiResponse
-      };
+      } as unknown as Response;
     });
 
     const data = await getStreakData('testuser', 'UTC', 'en-US');
@@ -107,7 +110,8 @@ describe('freeCodeCampService - getStreakData', () => {
   });
 
   test('should correctly compute streak according to numeric timezone offset', async (t) => {
-    t.mock.method(globalThis, 'fetch', async () => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async () => {
       const mockApiResponse = {
         entities: {
           user: {
@@ -126,22 +130,23 @@ describe('freeCodeCampService - getStreakData', () => {
       return {
         ok: true,
         json: async () => mockApiResponse
-      };
+      } as unknown as Response;
     });
 
-    t.mock.method(Date, 'now', () => 1780286400000);
+    mock.method(Date, 'now', () => 1780286400000);
 
     const dataUTC = await getStreakData('testuser', 'UTC', 'en-US');
     assert.strictEqual(dataUTC.count, 3);
   });
 
   test('should throw an error when API returns non-ok status', async (t) => {
-    t.mock.method(globalThis, 'fetch', async () => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async () => {
       return {
         ok: false,
         status: 404,
         text: async () => 'Not Found'
-      };
+      } as unknown as Response;
     });
 
     await assert.rejects(
@@ -151,11 +156,12 @@ describe('freeCodeCampService - getStreakData', () => {
   });
 
   test('should throw an error when user is not found in the response', async (t) => {
-    t.mock.method(globalThis, 'fetch', async () => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async () => {
       return {
         ok: true,
         json: async () => ({ entities: { user: {} } })
-      };
+      } as unknown as Response;
     });
 
     await assert.rejects(

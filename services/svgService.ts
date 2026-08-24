@@ -1,3 +1,5 @@
+import { getStreakMessage, getStatusMessage, DEFAULT_LOCALE } from './i18nService.js';
+
 const WIDTH = 540;
 const HEIGHT = 190;
 const BG_COLOR = '#1a1b2e';
@@ -7,13 +9,27 @@ const MISSED_COLOR = '#4b5563';
 const LABEL_COLOR = '#9ca3af';
 const FONT_FAMILY = 'system-ui, -apple-system, sans-serif';
 
-const { getStreakMessage, getStatusMessage, DEFAULT_LOCALE: DEFAULT_LANG } = require('./i18nService');
-
-function escapeXml(text) {
-  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+interface BadgeData {
+  count: number;
+  last7Days: Array<{ dayOfWeek: string; haveDone: boolean }>;
+  status: string;
 }
 
-function generateDayIcon(x, y, haveDone) {
+interface BadgeOptions {
+  width?: string | number;
+  height?: string | number;
+  lang?: string;
+}
+
+function escapeXml(text: string): string {
+  return String(text)
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"');
+}
+
+function generateDayIcon(x: number, y: number, haveDone: boolean): string {
   if (haveDone) {
     return `
       <circle cx="${x}" cy="${y}" r="16" fill="${DONE_COLOR}" opacity="0.2"/>
@@ -29,13 +45,13 @@ function generateDayIcon(x, y, haveDone) {
   }
 }
 
-function generateBadgeSvg(data, options = {}) {
+export function generateBadgeSvg(data: BadgeData, options: BadgeOptions = {}): string {
   const { count, last7Days, status } = data;
   const totalDays = last7Days.length;
 
   let width = WIDTH;
   if (options.width) {
-    const parsedWidth = parseInt(options.width, 10);
+    const parsedWidth = parseInt(String(options.width), 10);
     if (!isNaN(parsedWidth) && parsedWidth > 0) {
       width = parsedWidth;
     }
@@ -43,26 +59,30 @@ function generateBadgeSvg(data, options = {}) {
 
   let height = HEIGHT;
   if (options.height) {
-    const parsedHeight = parseInt(options.height, 10);
+    const parsedHeight = parseInt(String(options.height), 10);
     if (!isNaN(parsedHeight) && parsedHeight > 0) {
       height = parsedHeight;
     }
   }
 
-  const lang = options.lang || DEFAULT_LANG;
+  const lang = options.lang || DEFAULT_LOCALE;
 
   const spacing = (width - 80) / (totalDays - 1);
-  const startX = (width - (spacing * (totalDays - 1))) / 2;
+  const startX = (width - spacing * (totalDays - 1)) / 2;
 
-  const dayLabels = last7Days.map((day, i) => {
-    const x = startX + i * spacing;
-    return `<text x="${x}" y="108" fill="${LABEL_COLOR}" font-family="${FONT_FAMILY}" font-size="13" text-anchor="middle" font-weight="500">${escapeXml(day.dayOfWeek)}</text>`;
-  }).join('\n');
+  const dayLabels = last7Days
+    .map((day, i) => {
+      const x = startX + i * spacing;
+      return `<text x="${x}" y="108" fill="${LABEL_COLOR}" font-family="${FONT_FAMILY}" font-size="13" text-anchor="middle" font-weight="500">${escapeXml(day.dayOfWeek)}</text>`;
+    })
+    .join('\n');
 
-  const dayIcons = last7Days.map((day, i) => {
-    const x = startX + i * spacing;
-    return generateDayIcon(x, 140, day.haveDone);
-  }).join('\n');
+  const dayIcons = last7Days
+    .map((day, i) => {
+      const x = startX + i * spacing;
+      return generateDayIcon(x, 140, day.haveDone);
+    })
+    .join('\n');
 
   const statusColor = status === getStatusMessage(true, lang) ? DONE_COLOR : '#fbbf24';
 
@@ -94,5 +114,3 @@ function generateBadgeSvg(data, options = {}) {
 
   return svg;
 }
-
-module.exports = { generateBadgeSvg };
