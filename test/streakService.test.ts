@@ -4,55 +4,55 @@ import { getStreak } from '../services/streakService.js';
 
 describe('streakService - getStreak', () => {
   test('should return 0 for empty array', () => {
-    assert.strictEqual(getStreak([], 'UTC'), 0);
+    assert.strictEqual(getStreak([]), 0);
   });
 
   test('should return 0 for null/undefined', () => {
-    assert.strictEqual(getStreak(null as any, 'UTC'), 0);
-    assert.strictEqual(getStreak(undefined as any, 'UTC'), 0);
+    assert.strictEqual(getStreak(null as any), 0);
+    assert.strictEqual(getStreak(undefined as any), 0);
   });
 
   test('should return 1 for single timestamp', () => {
     const now = Date.now();
-    assert.strictEqual(getStreak([now], 'UTC'), 1);
+    assert.strictEqual(getStreak([now]), 1);
   });
 
   test('should count consecutive days', () => {
     const now = Date.now();
     const yesterday = now - 86400000;
     const twoDaysAgo = now - 2 * 86400000;
-    assert.strictEqual(getStreak([now, yesterday, twoDaysAgo], 'UTC'), 3);
+    assert.strictEqual(getStreak([now, yesterday, twoDaysAgo]), 3);
   });
 
   test('should break streak on non-consecutive day', () => {
     const now = Date.now();
     const yesterday = now - 86400000;
     const threeDaysAgo = now - 3 * 86400000;
-    assert.strictEqual(getStreak([now, yesterday, threeDaysAgo], 'UTC'), 2);
+    assert.strictEqual(getStreak([now, yesterday, threeDaysAgo]), 2);
   });
 
   test('should not double count same day', () => {
     const now = Date.now();
     const laterToday = now + 3600000;
-    assert.strictEqual(getStreak([now, laterToday], 'UTC'), 1);
+    assert.strictEqual(getStreak([now, laterToday]), 1);
   });
 
   test('should handle unsorted timestamps', () => {
     const now = Date.now();
     const yesterday = now - 86400000;
     const twoDaysAgo = now - 2 * 86400000;
-    assert.strictEqual(getStreak([twoDaysAgo, now, yesterday], 'UTC'), 3);
+    assert.strictEqual(getStreak([twoDaysAgo, now, yesterday]), 3);
   });
 
   test('should handle streak starting from yesterday (not today)', () => {
     const yesterday = Date.now() - 86400000;
     const twoDaysAgo = Date.now() - 2 * 86400000;
-    assert.strictEqual(getStreak([yesterday, twoDaysAgo], 'UTC'), 2);
+    assert.strictEqual(getStreak([yesterday, twoDaysAgo]), 2);
   });
 
   test('should return 0 when last activity is older than yesterday', () => {
     const threeDaysAgo = Date.now() - 3 * 86400000;
-    assert.strictEqual(getStreak([threeDaysAgo], 'UTC'), 0);
+    assert.strictEqual(getStreak([threeDaysAgo]), 0);
   });
 
   test('should handle multiple activities per day across streak', () => {
@@ -61,7 +61,7 @@ describe('streakService - getStreak', () => {
     const afternoon = now + 3600000;
     const yesterday = now - 86400000;
     const twoDaysAgo = now - 2 * 86400000;
-    assert.strictEqual(getStreak([morning, afternoon, yesterday, twoDaysAgo], 'UTC'), 3);
+    assert.strictEqual(getStreak([morning, afternoon, yesterday, twoDaysAgo]), 3);
   });
 
   test('should handle timezone correctly for day boundaries', () => {
@@ -71,7 +71,7 @@ describe('streakService - getStreak', () => {
       const ts1 = Date.UTC(2024, 0, 15, 1, 0, 0);
       const ts2 = Date.UTC(2024, 0, 14, 1, 0, 0);
       const ts3 = Date.UTC(2024, 0, 13, 1, 0, 0);
-      assert.strictEqual(getStreak([ts1, ts2, ts3], 'UTC'), 3);
+      assert.strictEqual(getStreak([ts1, ts2, ts3]), 3);
     } finally {
       Date.now = originalNow;
     }
@@ -79,6 +79,6 @@ describe('streakService - getStreak', () => {
 
   test('should handle edge case: streak of 1 day only today', () => {
     const now = Date.now();
-    assert.strictEqual(getStreak([now], 'UTC'), 1);
+    assert.strictEqual(getStreak([now]), 1);
   });
 });

@@ -59,7 +59,7 @@ export async function getStreakData(
     activityTimestamps = user.completedChallenges.map((c) => c.completedDate);
   }
 
-  const streakCount = getStreak(activityTimestamps, timezone);
+  const streakCount = getStreak(activityTimestamps);
   const last7Days = getLastWeekStatus(activityTimestamps, timezone, lang);
   const statusMsg = getStatusMessage(last7Days[last7Days.length - 1]?.haveDone ?? false, lang);
 

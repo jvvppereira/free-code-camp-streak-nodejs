@@ -1,4 +1,4 @@
-export function getDateString(timestampMs: number, timezone: string = 'UTC'): string {
+export function getDateString(timestampMs: number): string {
   const date = new Date(timestampMs);
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
