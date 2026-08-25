@@ -16,7 +16,7 @@ export function getLastWeekStatus(
   }
 
   const activityDates = new Set(
-    (timestamps || []).map((ts) => getDateString(ts, timezone))
+    (timestamps || []).map((ts) => getDateString(ts))
   );
 
   return days.map((date) => {
@@ -27,7 +27,7 @@ export function getLastWeekStatus(
       weekday: 'short',
     });
 
-    const dateStr = getDateString(date.getTime(), timezone);
+    const dateStr = getDateString(date.getTime());
     const haveDone = activityDates.has(dateStr);
 
     return { dayOfWeek: formattedDayOfWeek, haveDone };
