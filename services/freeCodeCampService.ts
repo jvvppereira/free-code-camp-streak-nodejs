@@ -1,4 +1,6 @@
 import { getStatusMessage, DEFAULT_LOCALE } from './i18nService.js';
+import { getStreak } from './streakService.js';
+import { getLastWeekStatus } from './weekStatusService.js';
 
 const FCC_API_URL = 'https://api.freecodecamp.org/users/get-public-profile';
 
@@ -41,91 +43,6 @@ async function fetchUserData(userName: string): Promise<FCCUser> {
   }
 
   return user;
-}
-
-function getDateString(timestampMs: number, timezone: string = 'UTC'): string {
-  const date = new Date(timestampMs);
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function getStreak(timestamps: number[], timezone: string = 'UTC'): number {
-  if (!timestamps || timestamps.length === 0) return 0;
-
-  const sorted = [...timestamps].sort((a, b) => a - b);
-
-  let lastStreakDate: string | null = null;
-  let streakCount = 0;
-
-  const reversed = [...sorted].reverse();
-  for (const ts of reversed) {
-    const dateStr = getDateString(ts, timezone);
-
-    if (lastStreakDate === null) {
-      const todayStr = getDateString(Date.now(), timezone);
-      const yesterdayDate = new Date(Date.now());
-      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-      const yesterdayStr = getDateString(yesterdayDate.getTime(), timezone);
-
-      if (dateStr !== todayStr && dateStr !== yesterdayStr) {
-        break;
-      }
-
-      streakCount = 1;
-      lastStreakDate = dateStr;
-    } else {
-      if (dateStr === lastStreakDate) {
-        continue;
-      }
-
-      const [y, m, d] = lastStreakDate.split('-').map(Number) as [number, number, number];
-      const prevDateStr = new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
-
-      if (dateStr === prevDateStr) {
-        streakCount++;
-        lastStreakDate = dateStr;
-      } else {
-        break;
-      }
-    }
-  }
-
-  return streakCount;
-}
-
-function getLastWeekStatus(
-  timestamps: number[],
-  timezone: string = 'UTC',
-  lang: string = DEFAULT_LOCALE
-): Array<{ dayOfWeek: string; haveDone: boolean }> {
-  const days: Date[] = [];
-  const now = Date.now();
-
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    days.push(date);
-  }
-
-  const activityDates = new Set(
-    (timestamps || []).map((ts) => getDateString(ts, timezone))
-  );
-
-  return days.map((date) => {
-    let adjustedDate = date;
-    const tzString = timezone;
-    const formattedDayOfWeek = adjustedDate.toLocaleDateString(lang, {
-      timeZone: tzString,
-      weekday: 'short',
-    });
-
-    const dateStr = getDateString(date.getTime(), timezone);
-    const haveDone = activityDates.has(dateStr);
-
-    return { dayOfWeek: formattedDayOfWeek, haveDone };
-  });
 }
 
 export async function getStreakData(
