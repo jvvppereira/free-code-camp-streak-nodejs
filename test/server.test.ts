@@ -1,18 +1,20 @@
-const { test, describe, afterEach } = require('node:test');
-const assert = require('node:assert');
-const app = require('../app');
-const freeCodeCampService = require('../services/freeCodeCampService');
-const svgService = require('../services/svgService');
+import { test, describe } from 'node:test';
+import assert from 'node:assert';
+import { AddressInfo } from 'node:net';
+import { Server } from 'node:http';
+import { createApp } from '../app.js';
+
+function getPort(server: Server): number {
+  const address = server.address();
+  if (address && typeof address === 'object') {
+    return (address as AddressInfo).port;
+  }
+  throw new Error('Could not get port from server');
+}
 
 describe('GET /streak endpoint', () => {
-  afterEach((t) => {
-    // Restore all mocked methods after each test
-    t.mock.restoreAll();
-  });
-
-  test('should return 200 and SVG content for a valid username', async (t) => {
-    // Mock getStreakData
-    t.mock.method(freeCodeCampService, 'getStreakData', async (username, timezone) => {
+  test('should return 200 and SVG content for a valid username', async () => {
+    const mockGetStreakData = async (username: string, timezone?: string) => {
       assert.strictEqual(username, 'QuincyLarson');
       assert.strictEqual(timezone, undefined);
       return {
@@ -23,10 +25,11 @@ describe('GET /streak endpoint', () => {
         ],
         status: 'Well done! Keep learning'
       };
-    });
+    };
 
+    const app = createApp({ getStreakData: mockGetStreakData });
     const server = app.listen(0);
-    const port = server.address().port;
+    const port = getPort(server);
 
     try {
       const res = await fetch(`http://localhost:${port}/streak?username=QuincyLarson`);
@@ -36,16 +39,17 @@ describe('GET /streak endpoint', () => {
       const body = await res.text();
       assert.match(body, /<svg/);
       assert.match(body, /10-day streak!/);
-      assert.match(body, /width="540"/); // default width
-      assert.match(body, /height="190"/); // default height
+      assert.match(body, /width="540"/);
+      assert.match(body, /height="190"/);
     } finally {
       server.close();
     }
   });
 
-  test('should return 400 Bad Request if username query parameter is missing', async (t) => {
+  test('should return 400 Bad Request if username query parameter is missing', async () => {
+    const app = createApp();
     const server = app.listen(0);
-    const port = server.address().port;
+    const port = getPort(server);
 
     try {
       const res = await fetch(`http://localhost:${port}/streak`);
@@ -59,14 +63,14 @@ describe('GET /streak endpoint', () => {
     }
   });
 
-  test('should return 500 Internal Server Error if freeCodeCampService throws an error', async (t) => {
-    // Mock getStreakData to fail
-    t.mock.method(freeCodeCampService, 'getStreakData', async () => {
+  test('should return 500 Internal Server Error if freeCodeCampService throws an error', async () => {
+    const mockGetStreakData = async () => {
       throw new Error('API down');
-    });
+    };
 
+    const app = createApp({ getStreakData: mockGetStreakData });
     const server = app.listen(0);
-    const port = server.address().port;
+    const port = getPort(server);
 
     try {
       const res = await fetch(`http://localhost:${port}/streak?username=testuser`);
@@ -80,19 +84,20 @@ describe('GET /streak endpoint', () => {
     }
   });
 
-  test('should correctly pass timezone parameter to freeCodeCampService', async (t) => {
-    let capturedTimezone = null;
-    t.mock.method(freeCodeCampService, 'getStreakData', async (username, timezone) => {
-      capturedTimezone = timezone;
+  test('should correctly pass timezone parameter to freeCodeCampService', async () => {
+    let capturedTimezone: string | null = null;
+    const mockGetStreakData = async (username: string, timezone?: string) => {
+      capturedTimezone = timezone ?? null;
       return {
         count: 5,
         last7Days: [{ dayOfWeek: 'Mon', haveDone: true }],
         status: 'Well done!'
       };
-    });
+    };
 
+    const app = createApp({ getStreakData: mockGetStreakData });
     const server = app.listen(0);
-    const port = server.address().port;
+    const port = getPort(server);
 
     try {
       const res = await fetch(`http://localhost:${port}/streak?username=testuser&timezone=America/Sao_Paulo`);
@@ -103,17 +108,18 @@ describe('GET /streak endpoint', () => {
     }
   });
 
-  test('should correctly pass custom width and height parameters to generateBadgeSvg', async (t) => {
-    t.mock.method(freeCodeCampService, 'getStreakData', async () => {
+  test('should correctly pass custom width and height parameters to generateBadgeSvg', async () => {
+    const mockGetStreakData = async () => {
       return {
         count: 5,
         last7Days: [{ dayOfWeek: 'Mon', haveDone: true }],
         status: 'Well done!'
       };
-    });
+    };
 
+    const app = createApp({ getStreakData: mockGetStreakData });
     const server = app.listen(0);
-    const port = server.address().port;
+    const port = getPort(server);
 
     try {
       const res = await fetch(`http://localhost:${port}/streak?username=testuser&width=700&height=250`);
