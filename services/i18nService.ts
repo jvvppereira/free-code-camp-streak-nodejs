@@ -18,7 +18,7 @@ interface LocaleMessages {
 
 const localeCache = new Map<string, LocaleMessages>();
 
-function loadLocale(locale: string): LocaleMessages {
+export function loadLocale(locale: string): LocaleMessages {
   if (localeCache.has(locale)) {
     return localeCache.get(locale)!;
   }

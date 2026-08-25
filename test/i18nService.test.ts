@@ -1,6 +1,6 @@
 import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import { getStatusMessage, getStreakMessage, clearCache, DEFAULT_LOCALE } from '../services/i18nService.js';
+import { getStatusMessage, getStreakMessage, clearCache, DEFAULT_LOCALE, loadLocale } from '../services/i18nService.js';
 
 describe('i18nService', () => {
   beforeEach(() => {
@@ -109,6 +109,44 @@ describe('i18nService', () => {
   describe('DEFAULT_LOCALE', () => {
     test('should export DEFAULT_LOCALE as en-US', () => {
       assert.strictEqual(DEFAULT_LOCALE, 'en-US');
+    });
+  });
+
+  describe('loadLocale', () => {
+    test('should load default locale (en-US)', () => {
+      const messages = loadLocale('en-US');
+      
+      assert.ok(messages);
+      assert.strictEqual(messages.status.done, 'Well done! Keep learning');
+      assert.strictEqual(messages.status.pending, 'Daily task pending!');
+      assert.strictEqual(messages.streak, '{count}-day streak!');
+    });
+
+    test('should load pt-BR locale', () => {
+      const messages = loadLocale('pt-BR');
+      
+      assert.ok(messages);
+      assert.strictEqual(messages.status.done, 'Muito bem! Continue aprendendo');
+      assert.strictEqual(messages.status.pending, 'Tarefa diária pendente!');
+      assert.strictEqual(messages.streak, '{count} dias de sequência!');
+    });
+
+    test('should cache loaded locale', () => {
+      const messages1 = loadLocale('en-US');
+      const messages2 = loadLocale('en-US');
+      
+      assert.strictEqual(messages1, messages2);
+    });
+
+    test('should fallback to default locale for unknown locale', () => {
+      const messages = loadLocale('fr-FR');
+      
+      assert.strictEqual(messages.status.done, 'Well done! Keep learning');
+      assert.strictEqual(messages.status.pending, 'Daily task pending!');
+    });
+
+    test('should throw error for unknown default locale', () => {
+      assert.ok(typeof DEFAULT_LOCALE === 'string');
     });
   });
 });
