@@ -134,3 +134,87 @@ describe('GET /streak endpoint', () => {
     }
   });
 });
+
+describe('GET /activity/today endpoint', () => {
+  test('should return 200 and true when user has activity today', async () => {
+    const mockHasActivityToday = async (username: string) => {
+      assert.strictEqual(username, 'QuincyLarson');
+      return true;
+    };
+
+    const app = createApp({ hasActivityToday: mockHasActivityToday });
+    const server = app.listen(0);
+    const port = getPort(server);
+
+    try {
+      const res = await fetch(`http://localhost:${port}/activity/today?username=QuincyLarson`);
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.headers.get('content-type'), 'application/json; charset=utf-8');
+      
+      const body = await res.json();
+      assert.strictEqual(body, true);
+    } finally {
+      server.close();
+    }
+  });
+
+  test('should return 200 and false when user has no activity today', async () => {
+    const mockHasActivityToday = async (username: string) => {
+      assert.strictEqual(username, 'testuser');
+      return false;
+    };
+
+    const app = createApp({ hasActivityToday: mockHasActivityToday });
+    const server = app.listen(0);
+    const port = getPort(server);
+
+    try {
+      const res = await fetch(`http://localhost:${port}/activity/today?username=testuser`);
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.headers.get('content-type'), 'application/json; charset=utf-8');
+      
+      const body = await res.json();
+      assert.strictEqual(body, false);
+    } finally {
+      server.close();
+    }
+  });
+
+  test('should return 400 Bad Request if username query parameter is missing', async () => {
+    const app = createApp();
+    const server = app.listen(0);
+    const port = getPort(server);
+
+    try {
+      const res = await fetch(`http://localhost:${port}/activity/today`);
+      assert.strictEqual(res.status, 400);
+      assert.strictEqual(res.headers.get('content-type'), 'text/plain; charset=utf-8');
+      
+      const body = await res.text();
+      assert.strictEqual(body, 'Missing "username" query parameter');
+    } finally {
+      server.close();
+    }
+  });
+
+  test('should return 500 Internal Server Error if freeCodeCampService throws an error', async () => {
+    const mockHasActivityToday = async () => {
+      throw new Error('API down');
+    };
+
+    const app = createApp({ hasActivityToday: mockHasActivityToday });
+    const server = app.listen(0);
+    const port = getPort(server);
+
+    try {
+      const res = await fetch(`http://localhost:${port}/activity/today?username=testuser`);
+      assert.strictEqual(res.status, 500);
+      assert.strictEqual(res.headers.get('content-type'), 'text/plain; charset=utf-8');
+      
+      const body = await res.text();
+      assert.strictEqual(body, 'Error: API down');
+    } finally {
+      server.close();
+    }
+  });
+});

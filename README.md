@@ -95,6 +95,7 @@ The server will start by default on port `3000` (or the port configured via the 
 ```
 Server running on http://localhost:3000
 Try: http://localhost:3000/streak?username=QuincyLarson
+Try: http://localhost:3000/activity/today?username=QuincyLarson
 ```
 
 ---
@@ -126,6 +127,32 @@ Request with Portuguese (Brazil) language:
 ```http
 GET http://localhost:3000/streak?username=jvvppereira&lang=pt-BR
 ```
+
+### Check Today's Activity
+
+* **Endpoint:** `/activity/today`
+* **Method:** `GET`
+* **Query Parameters:**
+  - `username` (required): Your public freeCodeCamp username.
+* **Response:** Raw JSON boolean (`true` or `false`) indicating if the user has completed any challenge today (UTC).
+
+#### Request Example:
+```http
+GET http://localhost:3000/activity/today?username=QuincyLarson
+```
+
+#### Response Examples:
+```json
+true
+```
+```json
+false
+```
+
+#### Use Cases:
+- Quickly check if you've coded today
+- Integrate into personal dashboards or status pages
+- Lightweight alternative to the full streak badge
 
 #### How to embed in your GitHub README:
 Simply add the URL of your hosted or local API into a GitHub markdown image tag:
@@ -178,7 +205,7 @@ This uses the native Node.js test runner via `tsx`.
 **Test coverage includes:**
 - Unit tests for each service (`dateUtils`, `streakService`, `weekStatusService`, `i18nService`, `svgService`)
 - Integration tests for `freeCodeCampService` (API orchestration)
-- End-to-end tests for the `/streak` endpoint
+- End-to-end tests for the `/streak` and `/activity/today` endpoints
 
 ---
 

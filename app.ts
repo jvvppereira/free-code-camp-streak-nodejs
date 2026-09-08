@@ -1,15 +1,17 @@
 import express, { Request, Response, Express } from 'express';
-import { getStreakData } from './services/freeCodeCampService.js';
+import { getStreakData, hasActivityToday } from './services/freeCodeCampService.js';
 import { generateBadgeSvg } from './services/svgService.js';
 
 interface Services {
   getStreakData: typeof getStreakData;
+  hasActivityToday: typeof hasActivityToday;
   generateBadgeSvg: typeof generateBadgeSvg;
 }
 
 function createApp(services?: Partial<Services>): Express {
   const app = express();
   const streakDataFn = services?.getStreakData ?? getStreakData;
+  const hasActivityTodayFn = services?.hasActivityToday ?? hasActivityToday;
   const generateBadgeSvgFn = services?.generateBadgeSvg ?? generateBadgeSvg;
 
   app.get('/streak', async (req: Request, res: Response) => {
@@ -33,6 +35,24 @@ function createApp(services?: Partial<Services>): Express {
     } catch (err) {
       const error = err as Error;
       console.error(`Error fetching data for "${username}":`, error.message);
+      res.status(500).type('text/plain').send(`Error: ${error.message}`);
+    }
+  });
+
+  app.get('/activity/today', async (req: Request, res: Response) => {
+    const username = getQueryParam(req.query, 'username');
+
+    if (!username) {
+      return res.status(400).type('text/plain').send('Missing "username" query parameter');
+    }
+
+    try {
+      const hasActivity = await hasActivityTodayFn(username);
+      res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
+      res.json(hasActivity);
+    } catch (err) {
+      const error = err as Error;
+      console.error(`Error fetching activity for "${username}":`, error.message);
       res.status(500).type('text/plain').send(`Error: ${error.message}`);
     }
   });

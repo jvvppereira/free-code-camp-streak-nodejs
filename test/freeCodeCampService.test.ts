@@ -1,6 +1,6 @@
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { getStreakData } from '../services/freeCodeCampService.js';
+import { getStreakData, hasActivityToday } from '../services/freeCodeCampService.js';
 
 describe('freeCodeCampService - getStreakData', () => {
   afterEach((t) => {
@@ -166,6 +166,155 @@ describe('freeCodeCampService - getStreakData', () => {
 
     await assert.rejects(
       getStreakData('missinguser'),
+      /User not found/
+    );
+  });
+});
+
+describe('freeCodeCampService - hasActivityToday', () => {
+  afterEach((t) => {
+    (t as any).mock?.restoreAll?.();
+  });
+
+  test('should return true when user has activity today (calendar)', async (t) => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async (url: string) => {
+      assert.ok(url.includes('username=testuser'));
+      
+      const todaySec = Math.floor(Date.now() / 1000);
+      const mockApiResponse = {
+        entities: {
+          user: {
+            testuser: {
+              calendar: {
+                [todaySec]: 1
+              },
+              completedChallenges: []
+            }
+          }
+        }
+      };
+
+      return {
+        ok: true,
+        json: async () => mockApiResponse
+      } as unknown as Response;
+    });
+
+    const result = await hasActivityToday('testuser');
+    assert.strictEqual(result, true);
+  });
+
+  test('should return false when user has no activity today (calendar)', async (t) => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async (url: string) => {
+      assert.ok(url.includes('username=testuser'));
+      
+      const yesterdaySec = Math.floor((Date.now() - 86400000) / 1000);
+      const mockApiResponse = {
+        entities: {
+          user: {
+            testuser: {
+              calendar: {
+                [yesterdaySec]: 1
+              },
+              completedChallenges: []
+            }
+          }
+        }
+      };
+
+      return {
+        ok: true,
+        json: async () => mockApiResponse
+      } as unknown as Response;
+    });
+
+    const result = await hasActivityToday('testuser');
+    assert.strictEqual(result, false);
+  });
+
+  test('should return true when user has activity today (completedChallenges)', async (t) => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async (url: string) => {
+      assert.ok(url.includes('username=testuser'));
+      
+      const mockApiResponse = {
+        entities: {
+          user: {
+            testuser: {
+              calendar: {},
+              completedChallenges: [
+                { completedDate: Date.now() }
+              ]
+            }
+          }
+        }
+      };
+
+      return {
+        ok: true,
+        json: async () => mockApiResponse
+      } as unknown as Response;
+    });
+
+    const result = await hasActivityToday('testuser');
+    assert.strictEqual(result, true);
+  });
+
+  test('should return false when user has no activity at all', async (t) => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async (url: string) => {
+      assert.ok(url.includes('username=testuser'));
+      
+      const mockApiResponse = {
+        entities: {
+          user: {
+            testuser: {
+              calendar: {},
+              completedChallenges: []
+            }
+          }
+        }
+      };
+
+      return {
+        ok: true,
+        json: async () => mockApiResponse
+      } as unknown as Response;
+    });
+
+    const result = await hasActivityToday('testuser');
+    assert.strictEqual(result, false);
+  });
+
+  test('should throw an error when API returns non-ok status', async (t) => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async () => {
+      return {
+        ok: false,
+        status: 404,
+        text: async () => 'Not Found'
+      } as unknown as Response;
+    });
+
+    await assert.rejects(
+      hasActivityToday('nonexistent'),
+      /API returned status 404: Not Found/
+    );
+  });
+
+  test('should throw an error when user is not found in the response', async (t) => {
+    const mock = (t as any).mock;
+    mock.method(globalThis, 'fetch', async () => {
+      return {
+        ok: true,
+        json: async () => ({ entities: { user: {} } })
+      } as unknown as Response;
+    });
+
+    await assert.rejects(
+      hasActivityToday('missinguser'),
       /User not found/
     );
   });

@@ -1,6 +1,7 @@
 import { getStatusMessage, DEFAULT_LOCALE } from './i18nService.js';
 import { getStreak } from './streakService.js';
 import { getLastWeekStatus } from './weekStatusService.js';
+import { getDateString } from './dateUtils.js';
 
 const FCC_API_URL = 'https://api.freecodecamp.org/users/get-public-profile';
 
@@ -43,6 +44,20 @@ async function fetchUserData(userName: string): Promise<FCCUser> {
   }
 
   return user;
+}
+
+export async function hasActivityToday(userName: string): Promise<boolean> {
+  const user = await fetchUserData(userName);
+
+  let activityTimestamps: number[] = [];
+  if (user.calendar && Object.keys(user.calendar).length > 0) {
+    activityTimestamps = Object.keys(user.calendar).map((tsStr) => Number(tsStr) * 1000);
+  } else if (user.completedChallenges && user.completedChallenges.length > 0) {
+    activityTimestamps = user.completedChallenges.map((c) => c.completedDate);
+  }
+
+  const todayStr = getDateString(Date.now());
+  return activityTimestamps.some((ts) => getDateString(ts) === todayStr);
 }
 
 export async function getStreakData(
