@@ -136,4 +136,75 @@ describe('svgService - generateBadgeSvg', () => {
     // Day label should be escaped: < -> <, > -> >
     assert.match(svg, /<script>/);
   });
+
+  test('widget-small: should include status message with scaled fonts and icons', () => {
+    const svg = generateBadgeSvg(mockData, { preset: 'widget-small' });
+    
+    // Status message should be present
+    assert.match(svg, /Well done! Keep learning/);
+    // Header font size 18
+    assert.match(svg, /font-size="18"/);
+    // Status font size 11
+    assert.match(svg, /font-size="11"/);
+    // Label font size 10
+    assert.match(svg, /font-size="10"/);
+    // Icon outer radius scaled to 8 (16 * 0.5)
+    assert.match(svg, /r="8"/);
+    // Icon inner radius scaled to 6 (12 * 0.5)
+    assert.match(svg, /r="6"/);
+  });
+
+  test('widget-medium: should include status message with scaled fonts and icons', () => {
+    const svg = generateBadgeSvg(mockData, { preset: 'widget-medium' });
+    
+    // Status message should be present
+    assert.match(svg, /Well done! Keep learning/);
+    // Header font size 20
+    assert.match(svg, /font-size="20"/);
+    // Status font size 12
+    assert.match(svg, /font-size="12"/);
+    // Label font size 11
+    assert.match(svg, /font-size="11"/);
+    // Icon outer radius scaled to 12 (16 * 0.75)
+    assert.match(svg, /r="12"/);
+    // Icon inner radius scaled to 9 (12 * 0.75)
+    assert.match(svg, /r="9"/);
+  });
+
+  test('default: should use full size fonts and icons', () => {
+    const svg = generateBadgeSvg(mockData, { preset: 'default' });
+    
+    // Status message should be present
+    assert.match(svg, /Well done! Keep learning/);
+    // Header font size 24
+    assert.match(svg, /font-size="24"/);
+    // Status font size 14
+    assert.match(svg, /font-size="14"/);
+    // Label font size 13
+    assert.match(svg, /font-size="13"/);
+    // Icon outer radius 16
+    assert.match(svg, /r="16"/);
+    // Icon inner radius 12
+    assert.match(svg, /r="12"/);
+  });
+
+  test('progressive scaling: header font 24 > 20 > 18', () => {
+    const svgDefault = generateBadgeSvg(mockData, { preset: 'default' });
+    const svgMedium = generateBadgeSvg(mockData, { preset: 'widget-medium' });
+    const svgSmall = generateBadgeSvg(mockData, { preset: 'widget-small' });
+    
+    assert.match(svgDefault, /font-size="24"/);
+    assert.match(svgMedium, /font-size="20"/);
+    assert.match(svgSmall, /font-size="18"/);
+  });
+
+  test('progressive scaling: icon outer radius 16 > 12 > 8', () => {
+    const svgDefault = generateBadgeSvg(mockData, { preset: 'default' });
+    const svgMedium = generateBadgeSvg(mockData, { preset: 'widget-medium' });
+    const svgSmall = generateBadgeSvg(mockData, { preset: 'widget-small' });
+    
+    assert.match(svgDefault, /r="16"/);
+    assert.match(svgMedium, /r="12"/);
+    assert.match(svgSmall, /r="8"/);
+  });
 });

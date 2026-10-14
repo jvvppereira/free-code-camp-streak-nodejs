@@ -9,13 +9,43 @@ const MISSED_COLOR = '#4b5563';
 const LABEL_COLOR = '#9ca3af';
 const FONT_FAMILY = 'system-ui, -apple-system, sans-serif';
 
-const PRESETS = {
-  default: { width: 540, height: 190 },
-  'widget-small': { width: 280, height: 120 },
-  'widget-medium': { width: 360, height: 160 },
+interface PresetConfig {
+  width: number;
+  height: number;
+  headerY: number;
+  statusY: number;
+  dividerY: number;
+  labelsY: number;
+  iconsY: number;
+  headerSize: number;
+  statusSize: number;
+  labelSize: number;
+  iconScale: number;
+}
+
+type PresetKey = 'default' | 'widget-small' | 'widget-medium';
+
+const PRESETS: Record<PresetKey, PresetConfig> = {
+  default: {
+    width: 540, height: 190,
+    headerY: 42, statusY: 70, dividerY: 88, labelsY: 108, iconsY: 140,
+    headerSize: 24, statusSize: 14, labelSize: 13,
+    iconScale: 1.0
+  },
+  'widget-medium': {
+    width: 360, height: 160,
+    headerY: 40, statusY: 62, dividerY: 75, labelsY: 90, iconsY: 115,
+    headerSize: 20, statusSize: 12, labelSize: 11,
+    iconScale: 0.75
+  },
+  'widget-small': {
+    width: 280, height: 120,
+    headerY: 35, statusY: 55, dividerY: 68, labelsY: 80, iconsY: 98,
+    headerSize: 18, statusSize: 11, labelSize: 10,
+    iconScale: 0.5
+  },
 } as const;
 
-type PresetKey = keyof typeof PRESETS;
 type BgMode = 'filled' | 'transparent' | 'dark' | 'light';
 
 interface BadgeData {
@@ -40,18 +70,29 @@ function escapeXml(text: string): string {
     .replace(/"/g, '"');
 }
 
-function generateDayIcon(x: number, y: number, haveDone: boolean, checkStrokeColor: string, missedStrokeColor: string): string {
+function generateDayIcon(x: number, y: number, haveDone: boolean, checkStrokeColor: string, missedStrokeColor: string, iconScale: number): string {
+  const rOuter = 16 * iconScale;
+  const rInner = 12 * iconScale;
+  const checkOffset = 5 * iconScale;
+  const checkArm1 = 1 * iconScale;
+  const checkArm2 = 4 * iconScale;
+  const checkArm3 = 6 * iconScale;
+  const checkArm4 = 3 * iconScale;
+  const missedOffset = 4 * iconScale;
+  const strokeWidth = 2 * iconScale;
+  const checkStrokeWidth = 2.5 * iconScale;
+
   if (haveDone) {
     return `
-      <circle cx="${x}" cy="${y}" r="16" fill="${DONE_COLOR}" opacity="0.2"/>
-      <circle cx="${x}" cy="${y}" r="12" fill="${DONE_COLOR}"/>
-      <path d="M${x - 5} ${y}L${x - 1} ${y + 4}L${x + 6} ${y - 3}" stroke="${checkStrokeColor}" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${x}" cy="${y}" r="${rOuter}" fill="${DONE_COLOR}" opacity="0.2"/>
+      <circle cx="${x}" cy="${y}" r="${rInner}" fill="${DONE_COLOR}"/>
+      <path d="M${x - checkOffset} ${y}L${x - checkArm1} ${y + checkArm2}L${x + checkArm3} ${y - checkArm4}" stroke="${checkStrokeColor}" stroke-width="${checkStrokeWidth}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
     `;
   } else {
     return `
-      <circle cx="${x}" cy="${y}" r="16" fill="${MISSED_COLOR}" opacity="0.3"/>
-      <circle cx="${x}" cy="${y}" r="12" fill="none" stroke="${missedStrokeColor}" stroke-width="2"/>
-      <path d="M${x - 4} ${y - 4}L${x + 4} ${y + 4}M${x + 4} ${y - 4}L${x - 4} ${y + 4}" stroke="${missedStrokeColor}" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="${x}" cy="${y}" r="${rOuter}" fill="${MISSED_COLOR}" opacity="0.3"/>
+      <circle cx="${x}" cy="${y}" r="${rInner}" fill="none" stroke="${missedStrokeColor}" stroke-width="${strokeWidth}"/>
+      <path d="M${x - missedOffset} ${y - missedOffset}L${x + missedOffset} ${y + missedOffset}M${x + missedOffset} ${y - missedOffset}L${x - missedOffset} ${y + missedOffset}" stroke="${missedStrokeColor}" stroke-width="${strokeWidth}" stroke-linecap="round"/>
     `;
   }
 }
@@ -62,11 +103,9 @@ export function generateBadgeSvg(data: BadgeData, options: BadgeOptions = {}): s
 
   const validPresets: PresetKey[] = ['default', 'widget-small', 'widget-medium'];
   const preset = options.preset && validPresets.includes(options.preset as PresetKey) ? options.preset as PresetKey : null;
-  const presetDimensions = preset ? PRESETS[preset] : null;
+  const presetConfig = preset ? PRESETS[preset] : PRESETS.default;
 
-  const isWidget = preset === 'widget-small' || preset === 'widget-medium';
-
-  let width: number = presetDimensions?.width ?? WIDTH;
+  let width: number = presetConfig.width;
   if (options.width) {
     const parsedWidth = parseInt(String(options.width), 10);
     if (!isNaN(parsedWidth) && parsedWidth > 0) {
@@ -74,7 +113,7 @@ export function generateBadgeSvg(data: BadgeData, options: BadgeOptions = {}): s
     }
   }
 
-  let height: number = presetDimensions?.height ?? HEIGHT;
+  let height: number = presetConfig.height;
   if (options.height) {
     const parsedHeight = parseInt(String(options.height), 10);
     if (!isNaN(parsedHeight) && parsedHeight > 0) {
@@ -99,21 +138,19 @@ export function generateBadgeSvg(data: BadgeData, options: BadgeOptions = {}): s
   const spacing = (width - 80) / (totalDays - 1);
   const startX = (width - spacing * (totalDays - 1)) / 2;
 
-  const dividerY = isWidget ? 62 : 88;
-  const labelsY = isWidget ? 82 : 108;
-  const iconsY = isWidget ? 110 : 140;
+  const { dividerY, labelsY, iconsY, headerY, statusY, headerSize, statusSize, labelSize, iconScale } = presetConfig;
 
   const dayLabels = last7Days
     .map((day, i) => {
       const x = startX + i * spacing;
-      return `<text x="${x}" y="${labelsY}" fill="${labelColor}" font-family="${FONT_FAMILY}" font-size="13" text-anchor="middle" font-weight="500">${escapeXml(day.dayOfWeek)}</text>`;
+      return `<text x="${x}" y="${labelsY}" fill="${labelColor}" font-family="${FONT_FAMILY}" font-size="${labelSize}" text-anchor="middle" font-weight="500">${escapeXml(day.dayOfWeek)}</text>`;
     })
     .join('\n');
 
   const dayIcons = last7Days
     .map((day, i) => {
       const x = startX + i * spacing;
-      return generateDayIcon(x, iconsY, day.haveDone, checkStrokeColor, missedStrokeColor);
+      return generateDayIcon(x, iconsY, day.haveDone, checkStrokeColor, missedStrokeColor, iconScale);
     })
     .join('\n');
 
@@ -151,11 +188,11 @@ export function generateBadgeSvg(data: BadgeData, options: BadgeOptions = {}): s
 
   ${backgroundRect}
 
-  <text x="${width / 2}" y="42" fill="${textColor}" font-family="${FONT_FAMILY}" font-size="24" text-anchor="middle" font-weight="bold">
+  <text x="${width / 2}" y="${headerY}" fill="${textColor}" font-family="${FONT_FAMILY}" font-size="${headerSize}" text-anchor="middle" font-weight="bold">
     <tspan fill="url(#fire)">🔥</tspan> ${escapeXml(getStreakMessage(count, lang))}
   </text>
 
-  ${!isWidget ? `<text x="${width / 2}" y="70" fill="${statusColor}" font-family="${FONT_FAMILY}" font-size="14" text-anchor="middle">${escapeXml(status)}</text>` : ''}
+  <text x="${width / 2}" y="${statusY}" fill="${statusColor}" font-family="${FONT_FAMILY}" font-size="${statusSize}" text-anchor="middle">${escapeXml(status)}</text>
 
   ${dividerLine}
 
