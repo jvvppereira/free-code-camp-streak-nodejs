@@ -20,6 +20,8 @@ function createApp(services?: Partial<Services>): Express {
     const height = getQueryParam(req.query, 'height');
     const timezone = getQueryParam(req.query, 'timezone');
     const lang = getQueryParam(req.query, 'lang');
+    const bg = getQueryParam(req.query, 'bg');
+    const preset = getQueryParam(req.query, 'preset');
 
     if (!username) {
       return res.status(400).type('text/plain').send('Missing "username" query parameter');
@@ -27,7 +29,7 @@ function createApp(services?: Partial<Services>): Express {
 
     try {
       const data = await streakDataFn(username, timezone, lang);
-      const svg = generateBadgeSvgFn(data, { width, height, lang });
+      const svg = generateBadgeSvgFn(data, { width, height, lang, bg, preset });
 
       res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
       res.setHeader('Content-Type', 'image/svg+xml');

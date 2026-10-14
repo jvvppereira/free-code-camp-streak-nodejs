@@ -112,6 +112,15 @@ Try: http://localhost:3000/activity/today?username=QuincyLarson
   - `height` (optional): The custom height for the SVG badge (default: `190`).
   - `timezone` (optional): Timezone name (e.g. `America/Sao_Paulo`, `UTC`) or numeric UTC offset (e.g. `-3`, `+5.5`) for streak calculation (default: `UTC`).
   - `lang` (optional): Language for text display (e.g. `en-US`, `pt-BR`) (default: `en-US`).
+  - `preset` (optional): Predefined dimensions for common widget sizes (default: `default`).
+    - `default` — 540×190 (GitHub profile badge)
+    - `widget-small` — 280×120 (iOS small widget / Android 2×1)
+    - `widget-medium` — 360×160 (iOS medium widget / Android 4×2)
+  - `bg` (optional): Background style (default: `filled`).
+    - `filled` — Dark gradient with subtle border (ideal for GitHub dark mode)
+    - `dark` — Solid dark background, no gradient, no border
+    - `light` — Solid light background, no gradient, no border, inverted text colors
+    - `transparent` — Fully transparent, no background rect or gradients
 
 #### Request Example:
 ```http
@@ -126,6 +135,21 @@ GET http://localhost:3000/streak?username=jvvppereira&width=600&height=220&timez
 Request with Portuguese (Brazil) language:
 ```http
 GET http://localhost:3000/streak?username=jvvppereira&lang=pt-BR
+```
+
+Request with widget preset and dark background:
+```http
+GET http://localhost:3000/streak?username=jvvppereira&preset=widget-small&bg=dark
+```
+
+Request with medium widget, light mode:
+```http
+GET http://localhost:3000/streak?username=jvvppereira&preset=widget-medium&bg=light
+```
+
+Request with transparent background for custom container:
+```http
+GET http://localhost:3000/streak?username=jvvppereira&width=300&height=140&bg=transparent
 ```
 
 ### Check Today's Activity
