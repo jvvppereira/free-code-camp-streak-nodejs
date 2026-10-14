@@ -64,6 +64,8 @@ export function generateBadgeSvg(data: BadgeData, options: BadgeOptions = {}): s
   const preset = options.preset && validPresets.includes(options.preset as PresetKey) ? options.preset as PresetKey : null;
   const presetDimensions = preset ? PRESETS[preset] : null;
 
+  const isWidget = preset === 'widget-small' || preset === 'widget-medium';
+
   let width: number = presetDimensions?.width ?? WIDTH;
   if (options.width) {
     const parsedWidth = parseInt(String(options.width), 10);
@@ -97,17 +99,21 @@ export function generateBadgeSvg(data: BadgeData, options: BadgeOptions = {}): s
   const spacing = (width - 80) / (totalDays - 1);
   const startX = (width - spacing * (totalDays - 1)) / 2;
 
+  const dividerY = isWidget ? 62 : 88;
+  const labelsY = isWidget ? 82 : 108;
+  const iconsY = isWidget ? 110 : 140;
+
   const dayLabels = last7Days
     .map((day, i) => {
       const x = startX + i * spacing;
-      return `<text x="${x}" y="108" fill="${labelColor}" font-family="${FONT_FAMILY}" font-size="13" text-anchor="middle" font-weight="500">${escapeXml(day.dayOfWeek)}</text>`;
+      return `<text x="${x}" y="${labelsY}" fill="${labelColor}" font-family="${FONT_FAMILY}" font-size="13" text-anchor="middle" font-weight="500">${escapeXml(day.dayOfWeek)}</text>`;
     })
     .join('\n');
 
   const dayIcons = last7Days
     .map((day, i) => {
       const x = startX + i * spacing;
-      return generateDayIcon(x, 140, day.haveDone, checkStrokeColor, missedStrokeColor);
+      return generateDayIcon(x, iconsY, day.haveDone, checkStrokeColor, missedStrokeColor);
     })
     .join('\n');
 
@@ -138,7 +144,7 @@ export function generateBadgeSvg(data: BadgeData, options: BadgeOptions = {}): s
     : '';
 
   const dividerLine = hasBackground && bgMode !== 'dark' && bgMode !== 'light'
-    ? `<line x1="40" y1="88" x2="${width - 40}" y2="88" stroke="${strokeColor}" stroke-width="1"/>`
+    ? `<line x1="40" y1="${dividerY}" x2="${width - 40}" y2="${dividerY}" stroke="${strokeColor}" stroke-width="1"/>`
     : '';
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${defs}
@@ -149,7 +155,7 @@ export function generateBadgeSvg(data: BadgeData, options: BadgeOptions = {}): s
     <tspan fill="url(#fire)">🔥</tspan> ${escapeXml(getStreakMessage(count, lang))}
   </text>
 
-  <text x="${width / 2}" y="70" fill="${statusColor}" font-family="${FONT_FAMILY}" font-size="14" text-anchor="middle">${escapeXml(status)}</text>
+  ${!isWidget ? `<text x="${width / 2}" y="70" fill="${statusColor}" font-family="${FONT_FAMILY}" font-size="14" text-anchor="middle">${escapeXml(status)}</text>` : ''}
 
   ${dividerLine}
 
